@@ -1,0 +1,332 @@
+{
+  "info": {
+    "name": "ServeRest - Known issues",
+    "description": "Each request asserts the expected behaviour of a defect found during testing. These tests fail until the defect is fixed; see the Findings section of the README.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "runId",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "schemas = {\"carts\":{\"type\":\"object\",\"required\":[\"quantidade\",\"carrinhos\"],\"properties\":{\"quantidade\":{\"type\":\"integer\",\"minimum\":0},\"carrinhos\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"produtos\",\"precoTotal\",\"quantidadeTotal\",\"idUsuario\",\"_id\"],\"properties\":{\"produtos\":{\"type\":\"array\",\"minItems\":1,\"items\":{\"type\":\"object\",\"required\":[\"idProduto\",\"quantidade\",\"precoUnitario\"],\"properties\":{\"idProduto\":{\"type\":\"string\"},\"quantidade\":{\"type\":\"integer\",\"minimum\":1},\"precoUnitario\":{\"type\":\"integer\"}}}},\"precoTotal\":{\"type\":\"integer\"},\"quantidadeTotal\":{\"type\":\"integer\"},\"idUsuario\":{\"type\":\"string\"},\"_id\":{\"type\":\"string\"}}}}}},\"created\":{\"type\":\"object\",\"required\":[\"message\",\"_id\"],\"properties\":{\"message\":{\"type\":\"string\"},\"_id\":{\"type\":\"string\",\"minLength\":1}},\"additionalProperties\":false},\"login\":{\"type\":\"object\",\"required\":[\"message\",\"authorization\"],\"properties\":{\"message\":{\"const\":\"Login realizado com sucesso\"},\"authorization\":{\"type\":\"string\",\"pattern\":\"^Bearer \"}},\"additionalProperties\":false},\"message\":{\"type\":\"object\",\"required\":[\"message\"],\"properties\":{\"message\":{\"type\":\"string\",\"minLength\":1}}},\"product\":{\"type\":\"object\",\"required\":[\"nome\",\"preco\",\"descricao\",\"quantidade\",\"_id\"],\"properties\":{\"nome\":{\"type\":\"string\"},\"preco\":{\"type\":\"integer\",\"exclusiveMinimum\":0},\"descricao\":{\"type\":\"string\"},\"quantidade\":{\"type\":\"integer\",\"minimum\":0},\"_id\":{\"type\":\"string\"}},\"additionalProperties\":false},\"products\":{\"type\":\"object\",\"required\":[\"quantidade\",\"produtos\"],\"properties\":{\"quantidade\":{\"type\":\"integer\",\"minimum\":0},\"produtos\":{\"type\":\"array\",\"items\":{\"$ref\":\"#/definitions/product\"}}},\"definitions\":{\"product\":{\"type\":\"object\",\"required\":[\"nome\",\"preco\",\"descricao\",\"quantidade\",\"_id\"],\"properties\":{\"nome\":{\"type\":\"string\"},\"preco\":{\"type\":\"integer\"},\"descricao\":{\"type\":\"string\"},\"quantidade\":{\"type\":\"integer\",\"minimum\":0},\"_id\":{\"type\":\"string\"}}}}},\"user\":{\"type\":\"object\",\"required\":[\"nome\",\"email\",\"password\",\"administrador\",\"_id\"],\"properties\":{\"nome\":{\"type\":\"string\"},\"email\":{\"type\":\"string\",\"format\":\"email\"},\"password\":{\"type\":\"string\"},\"administrador\":{\"enum\":[\"true\",\"false\"]},\"_id\":{\"type\":\"string\"}},\"additionalProperties\":false},\"users\":{\"type\":\"object\",\"required\":[\"quantidade\",\"usuarios\"],\"properties\":{\"quantidade\":{\"type\":\"integer\",\"minimum\":0},\"usuarios\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"required\":[\"nome\",\"email\",\"administrador\",\"_id\"],\"properties\":{\"nome\":{\"type\":\"string\"},\"email\":{\"type\":\"string\"},\"administrador\":{\"enum\":[\"true\",\"false\"]},\"_id\":{\"type\":\"string\"}}}}}}};",
+          "lib = function createLib(pm) {\n  const PASSWORD = 'QaSuite!2026';\n  const EMAIL_DOMAIN = 'qa-suite.dev';\n\n  const runId = () => {\n    let id = pm.collectionVariables.get('runId');\n    if (!id) {\n      id = Date.now().toString(36);\n      pm.collectionVariables.set('runId', id);\n    }\n    return id;\n  };\n\n  const userPrefix = () => `qa.${runId()}.`;\n  const productPrefix = () => `QA ${runId()} `;\n  const fake = template => pm.variables.replaceIn(template);\n  const shortId = () => fake('{{$randomUUID}}').slice(0, 8);\n  const slug = value => value.toLowerCase().replace(/[^a-z0-9]/g, '');\n\n  const send = request =>\n    new Promise((resolve, reject) =>\n      pm.sendRequest(request, (error, response) => (error ? reject(error) : resolve(response))),\n    );\n\n  const request = (method, path, { body, token } = {}) =>\n    send({\n      url: `${pm.environment.get('baseUrl')}${path}`,\n      method,\n      header: [\n        { key: 'Content-Type', value: 'application/json' },\n        ...(token ? [{ key: 'Authorization', value: token }] : []),\n      ],\n      body: body === undefined ? undefined : { mode: 'raw', raw: JSON.stringify(body) },\n    });\n\n  const api = {\n    get: (path, token) => request('GET', path, { token }),\n    post: (path, body, token) => request('POST', path, { body, token }),\n    put: (path, body, token) => request('PUT', path, { body, token }),\n    delete: (path, token) => request('DELETE', path, { token }),\n  };\n\n  const expectStatus = (response, code, action) => {\n    if (response.code !== code) {\n      throw new Error(`${action} returned ${response.code}: ${response.text()}`);\n    }\n    return response.json();\n  };\n\n  const sequence = (items, step) => items.reduce((chain, item) => chain.then(() => step(item)), Promise.resolve());\n\n  const data = {\n    password: PASSWORD,\n    userPrefix,\n    productPrefix,\n    user: (overrides = {}) => {\n      const firstName = fake('{{$randomFirstName}}');\n      return {\n        nome: `${firstName} ${fake('{{$randomLastName}}')}`,\n        email: `${userPrefix()}${slug(firstName)}.${shortId()}@${EMAIL_DOMAIN}`,\n        password: PASSWORD,\n        administrador: 'false',\n        ...overrides,\n      };\n    },\n    product: (overrides = {}) => ({\n      nome: `${productPrefix()}${fake('{{$randomProductName}}')} ${shortId()}`,\n      preco: Number(fake('{{$randomInt}}')) + 10,\n      descricao: fake('{{$randomCatchPhrase}}'),\n      quantidade: 10,\n      ...overrides,\n    }),\n    unknownId: () => `unknown${shortId()}`,\n  };\n\n  const seed = {\n    user: overrides => {\n      const user = data.user(overrides);\n      return api\n        .post('/usuarios', user)\n        .then(response => ({ ...user, _id: expectStatus(response, 201, 'create user')._id }));\n    },\n    login: user =>\n      api\n        .post('/login', { email: user.email, password: user.password })\n        .then(response => expectStatus(response, 200, 'login').authorization),\n    session: overrides => seed.user(overrides).then(user => seed.login(user).then(token => ({ ...user, token }))),\n    adminSession: () => seed.session({ administrador: 'true' }),\n    product: (adminToken, overrides) => {\n      const product = data.product(overrides);\n      return api\n        .post('/produtos', product, adminToken)\n        .then(response => ({ ...product, _id: expectStatus(response, 201, 'create product')._id }));\n    },\n    cart: (token, items) =>\n      api\n        .post(\n          '/carrinhos',\n          { produtos: items.map(item => ({ idProduto: item.product._id, quantidade: item.quantity })) },\n          token,\n        )\n        .then(response => expectStatus(response, 201, 'create cart')._id),\n  };\n\n  const vars = {\n    set: values =>\n      Object.entries(values).forEach(([key, value]) =>\n        pm.variables.set(key, typeof value === 'string' ? value : JSON.stringify(value)),\n      ),\n    get: key => pm.variables.get(key),\n    json: key => JSON.parse(pm.variables.get(key)),\n    payload: body => pm.variables.set('payload', JSON.stringify(body)),\n  };\n\n  const prepare = promise =>\n    promise.catch(error => pm.variables.set('setupError', error && error.message ? error.message : String(error)));\n\n  if (pm.response && pm.variables.get('setupError')) {\n    const setupError = pm.variables.get('setupError');\n    pm.variables.unset('setupError');\n    pm.test('test data setup', () => {\n      throw new Error(setupError);\n    });\n  }\n\n  const check = (name, promise, assertion) =>\n    promise\n      .then(value => pm.test(name, () => assertion(value)))\n      .catch(error =>\n        pm.test(name, () => {\n          throw error;\n        }),\n      );\n\n  const body = () => pm.response.json();\n  const jwtPayload = token => JSON.parse(require('atob')(token.replace(/^Bearer /, '').split('.')[1]));\n  const userFields = user => ({ nome: user.nome, email: user.email, administrador: user.administrador });\n  const productFields = product => ({\n    nome: product.nome,\n    preco: product.preco,\n    descricao: product.descricao,\n    quantidade: product.quantidade,\n  });\n  const cartOf = userId =>\n    api.get(`/carrinhos?idUsuario=${userId}`).then(response => expectStatus(response, 200, 'list carts').carrinhos);\n\n  const validate = {\n    status: code => pm.test(`responds with status ${code}`, () => pm.response.to.have.status(code)),\n    message: text => pm.test(`returns the message \"${text}\"`, () => pm.expect(body().message).to.eql(text)),\n    fieldErrors: (errors, label) =>\n      pm.test(label || `reports the field errors: ${Object.keys(errors).join(', ')}`, () =>\n        pm.expect(body()).to.include(errors),\n      ),\n    includes: expected => pm.test('returns the expected fields', () => pm.expect(body()).to.include(expected)),\n    singleResult: (listKey, expected) =>\n      pm.test(`returns exactly one ${listKey} item with the expected fields`, () => {\n        pm.expect(body().quantidade).to.eql(1);\n        pm.expect(body()[listKey][0]).to.include(expected);\n      }),\n    schema: name => pm.test(`matches the ${name} schema`, () => pm.response.to.have.jsonSchema(schemas[name])),\n\n    response: (code, schemaName) => {\n      validate.status(code);\n      pm.test('responds with JSON', () =>\n        pm.expect(pm.response.headers.get('Content-Type')).to.match(/application\\/json/),\n      );\n      if (schemaName) validate.schema(schemaName);\n    },\n\n    created: () => {\n      validate.response(201, 'created');\n      validate.message('Cadastro realizado com sucesso');\n      return body()._id;\n    },\n\n    updated: () => {\n      validate.response(200, 'message');\n      validate.message('Registro alterado com sucesso');\n    },\n\n    deleted: (message = 'Registro excluído com sucesso') => {\n      validate.response(200, 'message');\n      validate.message(message);\n    },\n\n    userCreated: expected => validate.userStored(validate.created(), expected),\n\n    productCreated: expected => validate.productStored(validate.created(), expected),\n\n    rejected: (code, message) => {\n      validate.response(code, 'message');\n      validate.message(message);\n    },\n\n    unauthorized: () =>\n      validate.rejected(401, 'Token de acesso ausente, inválido, expirado ou usuário do token não existe mais'),\n\n    tokenIssuedFor: email => {\n      pm.test('issues a bearer token for the logged-in user', () => {\n        const { authorization } = body();\n        pm.expect(authorization).to.match(/^Bearer [\\w-]+\\.[\\w-]+\\.[\\w-]+$/);\n        pm.expect(jwtPayload(authorization).email).to.eql(email);\n      });\n    },\n\n    userStored: (id, expected) =>\n      check('server stores the user with the expected data', api.get(`/usuarios/${id}`), response => {\n        pm.expect(response.code).to.eql(200);\n        pm.expect(userFields(response.json())).to.eql(userFields(expected));\n      }),\n\n    userNotStored: id =>\n      check('server no longer has the user', api.get(`/usuarios/${id}`), response => {\n        pm.expect(response.code).to.eql(400);\n        pm.expect(response.json().message).to.eql('Usuário não encontrado');\n      }),\n\n    usersWithEmail: (email, count) =>\n      check(\n        `server has ${count} user(s) with this email`,\n        api.get(`/usuarios?email=${encodeURIComponent(email)}`),\n        response => pm.expect(response.json().quantidade).to.eql(count),\n      ),\n\n    productStored: (id, expected) =>\n      check('server stores the product with the expected data', api.get(`/produtos/${id}`), response => {\n        pm.expect(response.code).to.eql(200);\n        pm.expect(productFields(response.json())).to.eql(productFields(expected));\n      }),\n\n    productNotStored: id =>\n      check('server no longer has the product', api.get(`/produtos/${id}`), response => {\n        pm.expect(response.code).to.eql(400);\n        pm.expect(response.json().message).to.eql('Produto não encontrado');\n      }),\n\n    productsWithName: (name, count) =>\n      check(\n        `server has ${count} product(s) with this name`,\n        api.get(`/produtos?nome=${encodeURIComponent(name)}`),\n        response => pm.expect(response.json().quantidade).to.eql(count),\n      ),\n\n    stock: (productId, quantity) =>\n      check(`product stock is ${quantity}`, api.get(`/produtos/${productId}`), response =>\n        pm.expect(response.json().quantidade).to.eql(quantity),\n      ),\n\n    cartStored: (userId, items) =>\n      check('server stores the cart with recalculated totals', cartOf(userId), carts => {\n        pm.expect(carts).to.have.lengthOf(1);\n        const [cart] = carts;\n        const expectedTotal = items.reduce((total, item) => total + item.product.preco * item.quantity, 0);\n        const expectedQuantity = items.reduce((total, item) => total + item.quantity, 0);\n        pm.expect(cart.precoTotal).to.eql(expectedTotal);\n        pm.expect(cart.quantidadeTotal).to.eql(expectedQuantity);\n        items.forEach(item => {\n          const line = cart.produtos.find(product => product.idProduto === item.product._id);\n          pm.expect(line, `cart line for ${item.product.nome}`).to.include({\n            quantidade: item.quantity,\n            precoUnitario: item.product.preco,\n          });\n        });\n      }),\n\n    noCart: userId =>\n      check('user has no cart on the server', cartOf(userId), carts => pm.expect(carts).to.have.lengthOf(0)),\n  };\n\n  const cleanup = {\n    run: () => {\n      const runUsers = () =>\n        api\n          .get('/usuarios')\n          .then(response =>\n            expectStatus(response, 200, 'list users').usuarios.filter(user => user.email.startsWith(userPrefix())),\n          );\n      const runProducts = () =>\n        api\n          .get('/produtos')\n          .then(response =>\n            expectStatus(response, 200, 'list products').produtos.filter(product =>\n              product.nome.startsWith(productPrefix()),\n            ),\n          );\n\n      return seed.adminSession().then(admin =>\n        runUsers()\n          .then(users =>\n            api\n              .get('/carrinhos')\n              .then(response => expectStatus(response, 200, 'list carts').carrinhos)\n              .then(carts => users.filter(user => carts.some(cart => cart.idUsuario === user._id)))\n              .then(usersWithCart =>\n                sequence(usersWithCart, user =>\n                  seed\n                    .login({ email: user.email, password: PASSWORD })\n                    .then(token => api.delete('/carrinhos/cancelar-compra', token)),\n                ),\n              )\n              .then(runProducts)\n              .then(products => sequence(products, product => api.delete(`/produtos/${product._id}`, admin.token)))\n              .then(() => sequence(users, user => api.delete(`/usuarios/${user._id}`))),\n          )\n          .then(() => Promise.all([runUsers(), runProducts()])),\n      );\n    },\n  };\n\n  const iteration = { get: key => pm.iterationData.get(key) };\n\n  return { api, data, seed, vars, iteration, prepare, check, validate, cleanup };\n};"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Known issues",
+      "description": "Expected to fail while the defects are open.",
+      "item": [
+        {
+          "name": "KI-01 GET /usuarios should not expose user passwords",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { seed, vars, prepare } = lib(pm);",
+                  "  prepare(seed.user().then(user => vars.set({ email: user.email })));",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { validate } = lib(pm);",
+                  "  validate.status(200);",
+                  "  pm.test('response does not contain the password of any user', () => {",
+                  "    pm.response.json().usuarios.forEach(user => pm.expect(user).to.not.have.property('password'));",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios?email={{email}}"
+          },
+          "response": []
+        },
+        {
+          "name": "KI-02 GET /usuarios/{id} should return 404 for an unknown user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { data, vars } = lib(pm);",
+                  "  vars.set({ unknownId: data.unknownId() });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { validate } = lib(pm);",
+                  "  validate.status(404);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios/{{unknownId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "KI-03 GET /produtos/{id} should return 404 for an unknown product",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { data, vars } = lib(pm);",
+                  "  vars.set({ unknownId: data.unknownId() });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { validate } = lib(pm);",
+                  "  validate.status(404);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/produtos/{{unknownId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "KI-04 DELETE /usuarios/{id} should return 404 for an unknown user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { data, vars } = lib(pm);",
+                  "  vars.set({ unknownId: data.unknownId() });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { validate } = lib(pm);",
+                  "  validate.status(404);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios/{{unknownId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "KI-05 DELETE /carrinhos/concluir-compra should fail when the user has no cart",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { seed, vars, prepare } = lib(pm);",
+                  "  prepare(seed.session().then(user => vars.set({ token: user.token })));",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  lib(pm);",
+                  "  pm.test('responds with a client error', () => pm.expect(pm.response.code).to.be.within(400, 499));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "{{token}}"
+              }
+            ],
+            "url": "{{baseUrl}}/carrinhos/concluir-compra"
+          },
+          "response": []
+        },
+        {
+          "name": "KI-06 PUT /usuarios/{id} should not create a user under a different id",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { data, vars } = lib(pm);",
+                  "  vars.set({ unknownId: data.unknownId() });",
+                  "  vars.payload(data.user());",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { vars } = lib(pm);",
+                  "  pm.test('either rejects the unknown id or keeps it for the new user', () => {",
+                  "    if (pm.response.code === 201) pm.expect(pm.response.json()._id).to.eql(vars.get('unknownId'));",
+                  "    else pm.expect(pm.response.code).to.eql(404);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios/{{unknownId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{{payload}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "description": "Removes every user, product and cart created by this run, identified by the run prefix.",
+      "item": [
+        {
+          "name": "should remove all data created by this run",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "{",
+                  "  const { cleanup, check } = lib(pm);",
+                  "  if (pm.info.iteration === pm.info.iterationCount - 1) {",
+                  "    check('removes every user and product created by this run', cleanup.run(), ([users, products]) => {",
+                  "      pm.expect(users, 'users left behind').to.have.lengthOf(0);",
+                  "      pm.expect(products, 'products left behind').to.have.lengthOf(0);",
+                  "    });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/usuarios"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

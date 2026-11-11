@@ -1,0 +1,11 @@
+case,nome,email,password,administrador,field,expectedError
+blank name,,<valid>,<valid>,<valid>,nome,nome não pode ficar em branco
+missing name,<missing>,<valid>,<valid>,<valid>,nome,nome é obrigatório
+invalid email,<valid>,not-an-email,<valid>,<valid>,email,email deve ser um email válido
+blank email,<valid>,,<valid>,<valid>,email,email não pode ficar em branco
+missing email,<valid>,<missing>,<valid>,<valid>,email,email é obrigatório
+blank password,<valid>,<valid>,,<valid>,password,password não pode ficar em branco
+missing password,<valid>,<valid>,<missing>,<valid>,password,password é obrigatório
+invalid admin flag,<valid>,<valid>,<valid>,maybe,administrador,administrador deve ser 'true' ou 'false'
+blank admin flag,<valid>,<valid>,<valid>,,administrador,administrador deve ser 'true' ou 'false'
+missing admin flag,<valid>,<valid>,<valid>,<missing>,administrador,administrador é obrigatório

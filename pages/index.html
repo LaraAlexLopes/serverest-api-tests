@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ServeRest API Tests</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #1f2328;
+        --muted: #59636e;
+        --card: #f6f8fa;
+        --accent: #0969da;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --fg: #e6edf3;
+          --muted: #9198a1;
+          --card: #161b22;
+          --accent: #4493f8;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 16px;
+      }
+      p {
+        color: var(--muted);
+      }
+      a.card {
+        display: block;
+        padding: 16px 20px;
+        margin: 12px 0;
+        border-radius: 8px;
+        background: var(--card);
+        color: inherit;
+        text-decoration: none;
+      }
+      a.card strong {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ServeRest API Tests</h1>
+      <p>Reports of the latest run on <code>main</code>. Postman collections generated from code and run by Newman.</p>
+      <a class="card" href="regression.html"
+        ><strong>Regression</strong><br />Users, login, products, carts and authorization, with server-side checks.</a
+      >
+      <a class="card" href="validation.html"
+        ><strong>User validation (data-driven)</strong><br />One iteration per row of
+        <code>data/invalid-users.csv</code>.</a
+      >
+      <a class="card" href="known-issues.html"
+        ><strong>Known issues</strong><br />Defects found during testing. These tests fail until the defects are
+        fixed.</a
+      >
+    </main>
+  </body>
+</html>

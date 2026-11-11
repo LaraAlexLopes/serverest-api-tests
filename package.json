@@ -1,0 +1,35 @@
+{
+  "name": "serverest-api-tests",
+  "version": "1.0.0",
+  "description": "API test automation for ServeRest with Postman collections generated from code and run by Newman",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.22.1 <25"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "server:up": "docker compose -f docker/docker-compose.yml up -d && bash scripts/wait-for-server.sh",
+    "server:down": "docker compose -f docker/docker-compose.yml down",
+    "test": "npm run build && npm run test:regression && npm run test:validation",
+    "test:regression": "newman run postman/regression.postman_collection.json -e environments/local.postman_environment.json -r cli,htmlextra,junit --reporter-htmlextra-export reports/regression.html --reporter-htmlextra-title \"ServeRest - Regression\" --reporter-junit-export reports/regression.xml",
+    "test:validation": "newman run postman/validation.postman_collection.json -e environments/local.postman_environment.json -d data/invalid-users.csv -r cli,htmlextra,junit --reporter-htmlextra-export reports/validation.html --reporter-htmlextra-title \"ServeRest - User validation (data-driven)\" --reporter-junit-export reports/validation.xml",
+    "test:known-issues": "newman run postman/known-issues.postman_collection.json -e environments/local.postman_environment.json -r cli,htmlextra --reporter-htmlextra-export reports/known-issues.html --reporter-htmlextra-title \"ServeRest - Known issues\"",
+    "test:dev": "newman run postman/regression.postman_collection.json -e environments/serverest-dev.postman_environment.json -r cli",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "newman": "6.2.3",
+    "newman-reporter-htmlextra": "1.23.1",
+    "prettier": "^3.10.0"
+  }
+}

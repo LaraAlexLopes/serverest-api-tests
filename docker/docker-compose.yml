@@ -1,0 +1,8 @@
+name: serverest-api-tests
+
+services:
+  serverest:
+    image: paulogoncalvesbh/serverest:${SERVEREST_VERSION:-3.2.2}
+    command: ['--nodoc']
+    ports:
+      - '3000:3000'

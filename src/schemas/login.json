@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["message", "authorization"],
+  "properties": {
+    "message": { "const": "Login realizado com sucesso" },
+    "authorization": { "type": "string", "pattern": "^Bearer " }
+  },
+  "additionalProperties": false
+}
