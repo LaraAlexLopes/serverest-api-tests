@@ -33,16 +33,16 @@ Postman · Newman · JavaScript · JSON Schema · htmlextra · Docker · GitHub 
 
 ## Findings
 
-Defects found while writing the suite. Each one has a test in the **Known issues** collection that asserts the expected behaviour, so it fails until the defect is fixed. CI runs it without blocking the build.
+Defects found while writing the suite, each tracked as a [GitHub issue](https://github.com/LaraAlexLopes/serverest-api-tests/issues?q=is%3Aissue). Each one has a test in the **Known issues** collection that asserts the expected behaviour, so it fails until the defect is fixed. CI runs it without blocking the build.
 
-| ID    | Severity | Defect                                                                                      | Expected                           |
-| ----- | -------- | ------------------------------------------------------------------------------------------- | ---------------------------------- |
-| KI-01 | High     | `GET /usuarios` returns every user's **password in plain text**                             | Passwords never returned           |
-| KI-02 | Low      | `GET /usuarios/{id}` with an unknown id returns `400`                                       | `404 Not Found`                    |
-| KI-03 | Low      | `GET /produtos/{id}` with an unknown id returns `400`                                       | `404 Not Found`                    |
-| KI-04 | Low      | `DELETE /usuarios/{id}` with an unknown id returns `200` ("Nenhum registro excluído")       | `404 Not Found`                    |
-| KI-05 | Medium   | `DELETE /carrinhos/concluir-compra` without a cart returns `200` with a "not found" message | A `4xx` error                      |
-| KI-06 | Medium   | `PUT /usuarios/{id}` with an unknown id creates a user **under a different, generated id**  | `404`, or create with the given id |
+| ID                                                                     | Severity | Defect                                                                                      | Expected                           |
+| ---------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- | ---------------------------------- |
+| [KI-01](https://github.com/LaraAlexLopes/serverest-api-tests/issues/1) | High     | `GET /usuarios` returns every user's **password in plain text**                             | Passwords never returned           |
+| [KI-02](https://github.com/LaraAlexLopes/serverest-api-tests/issues/2) | Low      | `GET /usuarios/{id}` with an unknown id returns `400`                                       | `404 Not Found`                    |
+| [KI-03](https://github.com/LaraAlexLopes/serverest-api-tests/issues/3) | Low      | `GET /produtos/{id}` with an unknown id returns `400`                                       | `404 Not Found`                    |
+| [KI-04](https://github.com/LaraAlexLopes/serverest-api-tests/issues/4) | Low      | `DELETE /usuarios/{id}` with an unknown id returns `200` ("Nenhum registro excluído")       | `404 Not Found`                    |
+| [KI-05](https://github.com/LaraAlexLopes/serverest-api-tests/issues/5) | Medium   | `DELETE /carrinhos/concluir-compra` without a cart returns `200` with a "not found" message | A `4xx` error                      |
+| [KI-06](https://github.com/LaraAlexLopes/serverest-api-tests/issues/6) | Medium   | `PUT /usuarios/{id}` with an unknown id creates a user **under a different, generated id**  | `404`, or create with the given id |
 
 The regression suite documents the current behaviour where a test depends on it. For example, a deleted user is checked through the current `400 Usuário não encontrado` response.
 

@@ -28,7 +28,7 @@
       "description": "Expected to fail while the defects are open.",
       "item": [
         {
-          "name": "KI-01 GET /usuarios should not expose user passwords",
+          "name": "KI-01 GET /usuarios should not expose user passwords (#1)",
           "event": [
             {
               "listen": "prerequest",
@@ -71,7 +71,7 @@
           "response": []
         },
         {
-          "name": "KI-02 GET /usuarios/{id} should return 404 for an unknown user",
+          "name": "KI-02 GET /usuarios/{id} should return 404 for an unknown user (#2)",
           "event": [
             {
               "listen": "prerequest",
@@ -111,7 +111,7 @@
           "response": []
         },
         {
-          "name": "KI-03 GET /produtos/{id} should return 404 for an unknown product",
+          "name": "KI-03 GET /produtos/{id} should return 404 for an unknown product (#3)",
           "event": [
             {
               "listen": "prerequest",
@@ -151,7 +151,7 @@
           "response": []
         },
         {
-          "name": "KI-04 DELETE /usuarios/{id} should return 404 for an unknown user",
+          "name": "KI-04 DELETE /usuarios/{id} should return 404 for an unknown user (#4)",
           "event": [
             {
               "listen": "prerequest",
@@ -191,7 +191,7 @@
           "response": []
         },
         {
-          "name": "KI-05 DELETE /carrinhos/concluir-compra should fail when the user has no cart",
+          "name": "KI-05 DELETE /carrinhos/concluir-compra should fail when the user has no cart (#5)",
           "event": [
             {
               "listen": "prerequest",
@@ -235,7 +235,7 @@
           "response": []
         },
         {
-          "name": "KI-06 PUT /usuarios/{id} should not create a user under a different id",
+          "name": "KI-06 PUT /usuarios/{id} should not create a user under a different id (#6)",
           "event": [
             {
               "listen": "prerequest",

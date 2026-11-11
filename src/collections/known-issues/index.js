@@ -8,7 +8,7 @@ export default {
       description: 'Expected to fail while the defects are open.',
       items: [
         {
-          name: 'KI-01 GET /usuarios should not expose user passwords',
+          name: 'KI-01 GET /usuarios should not expose user passwords (#1)',
           method: 'GET',
           path: '/usuarios?email={{email}}',
           prerequest({ seed, vars, prepare }) {
@@ -22,7 +22,7 @@ export default {
           },
         },
         {
-          name: 'KI-02 GET /usuarios/{id} should return 404 for an unknown user',
+          name: 'KI-02 GET /usuarios/{id} should return 404 for an unknown user (#2)',
           method: 'GET',
           path: '/usuarios/{{unknownId}}',
           prerequest({ data, vars }) {
@@ -33,7 +33,7 @@ export default {
           },
         },
         {
-          name: 'KI-03 GET /produtos/{id} should return 404 for an unknown product',
+          name: 'KI-03 GET /produtos/{id} should return 404 for an unknown product (#3)',
           method: 'GET',
           path: '/produtos/{{unknownId}}',
           prerequest({ data, vars }) {
@@ -44,7 +44,7 @@ export default {
           },
         },
         {
-          name: 'KI-04 DELETE /usuarios/{id} should return 404 for an unknown user',
+          name: 'KI-04 DELETE /usuarios/{id} should return 404 for an unknown user (#4)',
           method: 'DELETE',
           path: '/usuarios/{{unknownId}}',
           prerequest({ data, vars }) {
@@ -55,7 +55,7 @@ export default {
           },
         },
         {
-          name: 'KI-05 DELETE /carrinhos/concluir-compra should fail when the user has no cart',
+          name: 'KI-05 DELETE /carrinhos/concluir-compra should fail when the user has no cart (#5)',
           method: 'DELETE',
           path: '/carrinhos/concluir-compra',
           auth: '{{token}}',
@@ -67,7 +67,7 @@ export default {
           },
         },
         {
-          name: 'KI-06 PUT /usuarios/{id} should not create a user under a different id',
+          name: 'KI-06 PUT /usuarios/{id} should not create a user under a different id (#6)',
           method: 'PUT',
           path: '/usuarios/{{unknownId}}',
           body: '{{payload}}',
