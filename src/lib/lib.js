@@ -70,7 +70,7 @@ export default function createLib(pm) {
       quantidade: 10,
       ...overrides,
     }),
-    unknownId: () => `unknown${shortId()}`,
+    unknownId: () => fake('{{$randomUUID}}').replace(/-/g, '').slice(0, 16),
   };
 
   const seed = {
